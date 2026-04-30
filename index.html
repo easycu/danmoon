@@ -42,7 +42,13 @@
     <div id="practice-view" class="practice-section">
         <span class="badge" id="repeat-info">기록 측정</span>
         <div id="target-sentence" class="display-sentence"></div>
-        <input type="text" id="practice-input" autocomplete="off" placeholder="문장을 따라 치세요" oninput="handleInput()">
+        <input type="text"
+               id="practice-input"
+               autocomplete="off"
+               placeholder="문장을 따라 치세요"
+               oninput="handleInput()"
+               oncompositionstart="isComposing = true"
+               oncompositionend="isComposing = false; handleInput();">
         <div class="stats">
             <div>속도: <span id="cpm" style="font-weight:800; color:var(--primary);">0</span> CPM</div>
             <div>진행: <span id="progress">0</span> / <span id="goal">?</span></div>
@@ -58,6 +64,7 @@
     let currentRepeat = 0;
     let startTime = null;
     let pureTargetText = "";
+    let isComposing = false; // ✅ 한글 조합 상태
 
     function saveSentence() {
         const input = document.getElementById('sentence-input');
@@ -99,7 +106,7 @@
     function initLap() {
         const rawText = sentences[currentIdx];
         document.getElementById('target-sentence').innerHTML = rawText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        pureTargetText = rawText.replace(/\*\*/g, '').replace(/\s/g, ''); 
+        pureTargetText = rawText.replace(/\*\*/g, '').replace(/\s/g, '');
         
         const inputField = document.getElementById('practice-input');
         inputField.value = '';
@@ -114,15 +121,9 @@
         document.getElementById('goal').innerText = repeatGoal === 0 ? "?" : repeatGoal;
     }
 
-    function getAccuracy(a, b) {
-        let match = 0;
-        for(let i = 0; i < Math.min(a.length, b.length); i++){
-            if(a[i] === b[i]) match++;
-        }
-        return match / b.length;
-    }
-
     function handleInput() {
+        if (isComposing) return; // ✅ 조합 중이면 무시
+
         const inputField = document.getElementById('practice-input');
         if(!startTime && inputField.value.length > 0) startTime = new Date();
 
@@ -133,10 +134,9 @@
         }
 
         const currentValPure = inputField.value.replace(/\s/g, '');
-        const acc = getAccuracy(currentValPure, pureTargetText);
 
-        // ✅ 안정화된 판정
-        if (acc === 1 && currentValPure.length === pureTargetText.length) {
+        // ✅ 완전 일치 판정 (가장 안정적인 방식)
+        if (currentValPure === pureTargetText) {
             const finalCpm = parseInt(document.getElementById('cpm').innerText) || 0;
 
             requestAnimationFrame(() => {
