@@ -99,7 +99,6 @@
     function initLap() {
         const rawText = sentences[currentIdx];
         document.getElementById('target-sentence').innerHTML = rawText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        // 비교용: 모든 공백을 제거하여 띄어쓰기 오타 등으로 안 넘어가는 현상 방지
         pureTargetText = rawText.replace(/\*\*/g, '').replace(/\s/g, ''); 
         
         const inputField = document.getElementById('practice-input');
@@ -115,25 +114,37 @@
         document.getElementById('goal').innerText = repeatGoal === 0 ? "?" : repeatGoal;
     }
 
+    // ✅ 정확도 계산 함수 추가
+    function getAccuracy(a, b) {
+        let match = 0;
+        for(let i = 0; i < Math.min(a.length, b.length); i++){
+            if(a[i] === b[i]) match++;
+        }
+        return match / b.length;
+    }
+
     function handleInput() {
         const inputField = document.getElementById('practice-input');
         if(!startTime && inputField.value.length > 0) startTime = new Date();
 
-        // 실시간 타수
+        // ✅ 속도 계산 수정 (입력 길이 → 목표 길이 기준)
         if(startTime) {
             const elapsed = (new Date() - startTime) / 1000 / 60;
-            document.getElementById('cpm').innerText = Math.floor(inputField.value.length / elapsed) || 0;
+            const baseLength = pureTargetText.length;
+            document.getElementById('cpm').innerText = Math.floor(baseLength / elapsed) || 0;
         }
 
-        // 공백 무시 비교 (가장 확실한 방법)
         const currentValPure = inputField.value.replace(/\s/g, '');
-        
-        if (currentValPure === pureTargetText) {
+        const acc = getAccuracy(currentValPure, pureTargetText);
+
+        // ✅ 정확도 조건 추가
+        if (currentValPure === pureTargetText && acc > 0.95) {
             const finalCpm = parseInt(document.getElementById('cpm').innerText) || 0;
-            // 한글 끝글자 씹힘 방지를 위한 미세한 지연 후 실행
-            setTimeout(() => {
+
+            // ✅ setTimeout → requestAnimationFrame 변경
+            requestAnimationFrame(() => {
                 handleComplete(finalCpm);
-            }, 10);
+            });
         }
     }
 
