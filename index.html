@@ -12,15 +12,14 @@
         .admin-section { border-bottom: 2px solid #f0f0f0; padding-bottom: 30px; margin-bottom: 30px; }
         #sentence-input { width: 100%; height: 100px; padding: 15px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; resize: none; }
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        button { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: 600; transition: 0.2s; }
+        button { cursor: pointer; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; }
         .btn-add { background: var(--primary); color: white; }
         .btn-start { background: var(--accent); color: white; flex-grow: 1; font-size: 16px; }
-        #sentence-list { margin-top: 20px; max-height: 200px; overflow-y: auto; background: #f0f4f8; padding: 15px; border-radius: 10px; }
-        .item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
+        #sentence-list { margin-top: 20px; max-height: 200px; overflow-y: auto; background: #f0f4f8; padding: 10px; border-radius: 10px; }
+        .item { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #ddd; }
         .practice-section { display: none; text-align: center; }
-        .display-sentence { font-size: 26px; margin: 40px 0; line-height: 1.8; min-height: 80px; display: block; word-break: keep-all; }
-        /* 약어 박스 디자인 */
-        .display-sentence b { color: #fff; background-color: var(--primary); padding: 0 6px; border-radius: 4px; font-weight: 700; margin: 0 2px; text-decoration: none; display: inline-block; vertical-align: baseline; }
+        .display-sentence { font-size: 26px; margin: 40px 0; line-height: 1.8; word-break: keep-all; }
+        .display-sentence b { color: #fff; background-color: var(--primary); padding: 0 6px; border-radius: 4px; margin: 0 2px; display: inline-block; }
         #practice-input { width: 100%; font-size: 22px; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; box-sizing: border-box; text-align: center; outline: none; }
         .stats { margin-top: 30px; display: flex; justify-content: center; gap: 40px; font-size: 18px; }
         .badge { background: #ffeaa7; padding: 5px 15px; border-radius: 50px; font-weight: bold; }
@@ -41,15 +40,14 @@
     </div>
 
     <div id="practice-view" class="practice-section">
-        <span class="badge" id="repeat-info">준비 완료</span>
+        <span class="badge" id="repeat-info">기록 측정</span>
         <div id="target-sentence" class="display-sentence"></div>
-        <input type="text" id="practice-input" autocomplete="off" placeholder="문장을 치고 Enter 또는 Space를 누르세요" onkeydown="handleKeyDown(event)">
-        <p style="color: #999; margin-top:10px;">다 입력한 후 [엔터] 또는 [스페이스바]를 눌러주세요.</p>
+        <input type="text" id="practice-input" autocomplete="off" placeholder="문장을 따라 치세요" oninput="handleInput()">
         <div class="stats">
             <div>속도: <span id="cpm" style="font-weight:800; color:var(--primary);">0</span> CPM</div>
-            <div>진행: <span id="progress">0</span> / <span id="goal">0</span></div>
+            <div>진행: <span id="progress">0</span> / <span id="goal">?</span></div>
         </div>
-        <button onclick="stopPractice()" style="margin-top:20px; background:#6c757d; color:white;">연습 중단</button>
+        <button onclick="stopPractice()" style="margin-top:20px; background:#6c757d; color:white;">중단</button>
     </div>
 </div>
 
@@ -59,15 +57,12 @@
     let repeatGoal = 0;
     let currentRepeat = 0;
     let startTime = null;
-    let pureTargetText = ""; // 비교를 위한 순수 텍스트 보관
+    let pureTargetText = "";
 
     function saveSentence() {
         const input = document.getElementById('sentence-input');
-        const originalText = input.value.trim();
-        if(!originalText) return;
-        
-        // 원본 텍스트(별표 포함)를 저장하되, 화면 표시용 HTML만 변환
-        sentences.push(originalText); 
+        if(!input.value.trim()) return;
+        sentences.push(input.value.trim());
         localStorage.setItem('sh_data', JSON.stringify(sentences));
         input.value = '';
         renderList();
@@ -76,10 +71,8 @@
     function renderList() {
         const listDiv = document.getElementById('sentence-list');
         listDiv.innerHTML = sentences.map((s, i) => `
-            <div class="item">
-                <span>${i+1}. ${s.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</span>
-                <button onclick="deleteSentence(${i})" style="background:#ff7675; color:white; padding:2px 8px; border-radius:4px;">삭제</button>
-            </div>
+            <div class="item"><span>${i+1}. ${s.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</span>
+            <button onclick="deleteSentence(${i})" style="background:#ff7675; color:white; border-radius:4px;">삭제</button></div>
         `).join('');
     }
 
@@ -90,7 +83,7 @@
     }
 
     function startPractice() {
-        if(!sentences.length) return alert('문장을 먼저 추가해주세요.');
+        if(!sentences.length) return alert('문장을 추가해주세요.');
         document.getElementById('admin-view').style.display = 'none';
         document.getElementById('practice-view').style.display = 'block';
         pickRandomSentence();
@@ -105,11 +98,9 @@
 
     function initLap() {
         const rawText = sentences[currentIdx];
-        // 화면에는 **를 빼고 <b>로 보여줌
         document.getElementById('target-sentence').innerHTML = rawText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        
-        // 비교용 순수 텍스트 (** 제거한 순수 한글/공백만)
-        pureTargetText = rawText.replace(/\*\*/g, '').trim();
+        // 비교용: 모든 공백을 제거하여 띄어쓰기 오타 등으로 안 넘어가는 현상 방지
+        pureTargetText = rawText.replace(/\*\*/g, '').replace(/\s/g, ''); 
         
         const inputField = document.getElementById('practice-input');
         inputField.value = '';
@@ -119,31 +110,30 @@
     }
 
     function updateUI() {
-        document.getElementById('repeat-info').innerText = repeatGoal === 0 ? "기록 측정 시도" : `${repeatGoal - currentRepeat}번 더 반복`;
+        document.getElementById('repeat-info').innerText = repeatGoal === 0 ? "속도 측정 중..." : `반복 중 (${currentRepeat}/${repeatGoal})`;
         document.getElementById('progress').innerText = currentRepeat;
         document.getElementById('goal').innerText = repeatGoal === 0 ? "?" : repeatGoal;
     }
 
-    function handleKeyDown(event) {
-        if(!startTime) startTime = new Date();
+    function handleInput() {
+        const inputField = document.getElementById('practice-input');
+        if(!startTime && inputField.value.length > 0) startTime = new Date();
 
         // 실시간 타수
-        const currentVal = event.target.value;
-        const elapsed = (new Date() - startTime) / 1000 / 60;
-        if(elapsed > 0) {
-            document.getElementById('cpm').innerText = Math.floor(currentVal.length / elapsed);
+        if(startTime) {
+            const elapsed = (new Date() - startTime) / 1000 / 60;
+            document.getElementById('cpm').innerText = Math.floor(inputField.value.length / elapsed) || 0;
         }
 
-        // 엔터 또는 스페이스바
-        if (event.key === 'Enter' || event.key === ' ') {
-            const inputText = event.target.value.trim().replace(/\s+/g, ' ');
-            const targetText = pureTargetText.replace(/\s+/g, ' ');
-
-            if (inputText === targetText) {
-                event.preventDefault();
-                const finalCpm = parseInt(document.getElementById('cpm').innerText) || 0;
+        // 공백 무시 비교 (가장 확실한 방법)
+        const currentValPure = inputField.value.replace(/\s/g, '');
+        
+        if (currentValPure === pureTargetText) {
+            const finalCpm = parseInt(document.getElementById('cpm').innerText) || 0;
+            // 한글 끝글자 씹힘 방지를 위한 미세한 지연 후 실행
+            setTimeout(() => {
                 handleComplete(finalCpm);
-            }
+            }, 10);
         }
     }
 
@@ -155,7 +145,6 @@
         }
         currentRepeat++;
         if(currentRepeat >= repeatGoal) {
-            alert(`목표 달성! (${speed}타)`);
             pickRandomSentence();
         } else {
             initLap();
