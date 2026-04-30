@@ -10,16 +10,17 @@
         .container { width: 100%; max-width: 850px; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         h1 { text-align: center; color: var(--primary); }
         .admin-section { border-bottom: 2px solid #f0f0f0; padding-bottom: 30px; margin-bottom: 30px; }
-        #sentence-input { width: 100%; height: 100px; padding: 15px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        #sentence-input { width: 100%; height: 100px; padding: 15px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; resize: none; }
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        button { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: 600; }
+        button { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: 600; transition: 0.2s; }
         .btn-add { background: var(--primary); color: white; }
         .btn-start { background: var(--accent); color: white; flex-grow: 1; font-size: 16px; }
         #sentence-list { margin-top: 20px; max-height: 200px; overflow-y: auto; background: #f0f4f8; padding: 15px; border-radius: 10px; }
-        .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
         .practice-section { display: none; text-align: center; }
-        .display-sentence { font-size: 26px; margin: 40px 0; line-height: 1.8; min-height: 80px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; }
-        .display-sentence b { color: #fff; background-color: var(--primary); padding: 2px 8px; border-radius: 6px; display: inline-block; }
+        .display-sentence { font-size: 26px; margin: 40px 0; line-height: 1.8; min-height: 80px; display: block; word-break: keep-all; }
+        /* 약어 박스 디자인 */
+        .display-sentence b { color: #fff; background-color: var(--primary); padding: 0 6px; border-radius: 4px; font-weight: 700; margin: 0 2px; text-decoration: none; display: inline-block; vertical-align: baseline; }
         #practice-input { width: 100%; font-size: 22px; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; box-sizing: border-box; text-align: center; outline: none; }
         .stats { margin-top: 30px; display: flex; justify-content: center; gap: 40px; font-size: 18px; }
         .badge { background: #ffeaa7; padding: 5px 15px; border-radius: 50px; font-weight: bold; }
@@ -58,11 +59,15 @@
     let repeatGoal = 0;
     let currentRepeat = 0;
     let startTime = null;
+    let pureTargetText = ""; // 비교를 위한 순수 텍스트 보관
 
     function saveSentence() {
         const input = document.getElementById('sentence-input');
-        if(!input.value.trim()) return;
-        sentences.push(input.value.trim().replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'));
+        const originalText = input.value.trim();
+        if(!originalText) return;
+        
+        // 원본 텍스트(별표 포함)를 저장하되, 화면 표시용 HTML만 변환
+        sentences.push(originalText); 
         localStorage.setItem('sh_data', JSON.stringify(sentences));
         input.value = '';
         renderList();
@@ -71,7 +76,10 @@
     function renderList() {
         const listDiv = document.getElementById('sentence-list');
         listDiv.innerHTML = sentences.map((s, i) => `
-            <div class="item"><span>${i+1}. ${s}</span><button onclick="deleteSentence(${i})" style="background:#ff7675; color:white; padding:2px 8px; border-radius:4px;">삭제</button></div>
+            <div class="item">
+                <span>${i+1}. ${s.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</span>
+                <button onclick="deleteSentence(${i})" style="background:#ff7675; color:white; padding:2px 8px; border-radius:4px;">삭제</button>
+            </div>
         `).join('');
     }
 
@@ -96,7 +104,13 @@
     }
 
     function initLap() {
-        document.getElementById('target-sentence').innerHTML = sentences[currentIdx];
+        const rawText = sentences[currentIdx];
+        // 화면에는 **를 빼고 <b>로 보여줌
+        document.getElementById('target-sentence').innerHTML = rawText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        
+        // 비교용 순수 텍스트 (** 제거한 순수 한글/공백만)
+        pureTargetText = rawText.replace(/\*\*/g, '').trim();
+        
         const inputField = document.getElementById('practice-input');
         inputField.value = '';
         inputField.focus();
@@ -113,20 +127,20 @@
     function handleKeyDown(event) {
         if(!startTime) startTime = new Date();
 
-        // 실시간 타수 계산
+        // 실시간 타수
         const currentVal = event.target.value;
         const elapsed = (new Date() - startTime) / 1000 / 60;
         if(elapsed > 0) {
             document.getElementById('cpm').innerText = Math.floor(currentVal.length / elapsed);
         }
 
-        // 엔터(Enter) 또는 스페이스(Space) 감지
+        // 엔터 또는 스페이스바
         if (event.key === 'Enter' || event.key === ' ') {
-            const targetText = document.getElementById('target-sentence').innerText.trim().replace(/\s+/g, ' ');
             const inputText = event.target.value.trim().replace(/\s+/g, ' ');
+            const targetText = pureTargetText.replace(/\s+/g, ' ');
 
             if (inputText === targetText) {
-                event.preventDefault(); // 입력창 초기화 전 공백 삽입 방지
+                event.preventDefault();
                 const finalCpm = parseInt(document.getElementById('cpm').innerText) || 0;
                 handleComplete(finalCpm);
             }
@@ -141,7 +155,7 @@
         }
         currentRepeat++;
         if(currentRepeat >= repeatGoal) {
-            alert(`목표 달성! (${speed}타) 다음 문장으로 이동합니다.`);
+            alert(`목표 달성! (${speed}타)`);
             pickRandomSentence();
         } else {
             initLap();
