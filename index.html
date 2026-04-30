@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Shorthand Practice Tool</title>
+    <style>
+        :root { --primary: #4a90e2; --bg: #f5f7fa; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 800px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        
+        /* 문장 관리 섹션 */
+        .admin-section { border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+        #sentence-input { width: 100%; height: 80px; margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+        button { cursor: pointer; padding: 8px 16px; border: none; border-radius: 5px; background: var(--primary); color: white; transition: 0.2s; }
+        button:hover { opacity: 0.8; }
+        .list-btn { background: #6c757d; }
+        .del-btn { background: #e74c3c; padding: 4px 8px; font-size: 12px; }
+
+        /* 연습 섹션 */
+        .practice-section { display: none; text-align: center; }
+        .display-sentence { font-size: 24px; margin: 20px 0; line-height: 1.6; word-break: keep-all; }
+        .display-sentence b { color: var(--primary); text-decoration: underline; }
+        #practice-input { width: 100%; font-size: 20px; padding: 12px; border: 2px solid var(--primary); border-radius: 5px; }
+        .stats { margin-top: 15px; display: flex; justify-content: space-around; font-weight: bold; }
+        .info-badge { background: #eee; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>속기 타자연습 Program</h1>
+
+    <!-- 문장 관리 모드 -->
+    <div id="admin-view" class="admin-section">
+        <h3>문장 관리 (약어는 **텍스트** 로 입력)</h3>
+        <textarea id="sentence-input" placeholder="연습할 문장을 입력하세요. 약어는 **단어** 처럼 별표 두 개로 감싸면 진하게 표시됩니다."></textarea>
+        <div class="btn-group">
+            <button onclick="saveSentence()">문장 추가/수정</button>
+            <button class="list-btn" onclick="toggleList()">문장 목록 보기/닫기</button>
+            <button style="background:#2ecc71" onclick="startPractice()">연습 시작하기 ▶</button>
+        </div>
+        <div id="sentence-list" style="display:none; margin-top:15px;"></div>
+    </div>
+
+    <!-- 연습 모드 -->
+    <div id="practice-view" class="practice-section">
+        <div class="info-badge">남은 반복 횟수: <span id="repeat-count">-</span></div>
+        <div id="target-sentence" class="display-sentence"></div>
+        <input type="text" id="practice-input" autocomplete="off" placeholder="위 문장을 따라 치세요..." oninput="checkInput()">
+        <div class="stats">
+            <div>현재 타수: <span id="cpm">0</span> 타</div>
+            <div>정확도: <span id="accuracy">0</span>%</div>
+        </div>
+        <button class="list-btn" style="margin-top:20px" onclick="stopPractice()">연습 중단</button>
+    </div>
+</div>
+
+<script>
+    let sentences = JSON.parse(localStorage.getItem('shorthand_items')) || [];
+    let currentIdx = -1;
+    let repeatGoal = 0;
+    let currentRepeat = 0;
+    let startTime = null;
+
+    // 1. 문장 저장 (마크다운 식 ** 표시를 b 태그로 변환)
+    function saveSentence() {
+        const input = document.getElementById('sentence-input');
+        if(!input.value.trim()) return;
+        
+        // **약어** -> <b>약어</b> 변환 로직
+        let formatted = input.value.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        sentences.push(formatted);
+        localStorage.setItem('shorthand_items', JSON.stringify(sentences));
+        input.value = '';
+        renderList();
+        alert('문장이 저장되었습니다.');
+    }
+
+    // 2. 목록 보기 및 삭제
+    function renderList() {
+        const listDiv = document.getElementById('sentence-list');
+        listDiv.innerHTML = sentences.map((s, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:5px 0;">
+                <span style="font-size:14px;">${i+1}. ${s}</span>
+                <button class="del-btn" onclick="deleteSentence(${i})">삭제</button>
+            </div>
+        `).join('');
+    }
+
+    function deleteSentence(i) {
+        sentences.splice(i, 1);
+        localStorage.setItem('shorthand_items', JSON.stringify(sentences));
+        renderList();
+    }
+
+    function toggleList() {
+        const listDiv = document.getElementById('sentence-list');
+        listDiv.style.display = listDiv.style.display === 'none' ? 'block' : 'none';
+        renderList();
+    }
+
+    // 3. 연습 로직
+    function startPractice() {
+        if(sentences.length === 0) return alert('연습할 문장이 없습니다.');
+        document.getElementById('admin-view').style.display = 'none';
+        document.getElementById('practice-view').style.display = 'block';
+        nextSentence();
+    }
+
+    function nextSentence() {
+        currentIdx = Math.floor(Math.random() * sentences.length);
+        currentRepeat = 0;
+        repeatGoal = 0; // 초기화
+        setupNextLap();
+    }
+
+    function setupNextLap() {
+        document.getElementById('target-sentence').innerHTML = sentences[currentIdx];
+        const inputField = document.getElementById('practice-input');
+        inputField.value = '';
+        inputField.focus();
+        startTime = null;
+        document.getElementById('repeat-count').innerText = repeatGoal ? (repeatGoal - currentRepeat) : '기록 측정 중';
+    }
+
+    function checkInput() {
+        const inputField = document.getElementById('practice-input');
+        const targetText = document.getElementById('target-sentence').innerText; // 태그 제외 텍스트만
+        const currentVal = inputField.value;
+
+        if(!startTime && currentVal.length > 0) startTime = new Date();
+
+        // 실시간 타수 계산
+        if(startTime) {
+            const now = new Date();
+            const elapsed = (now - startTime) / 1000 / 60; // 분 단위
+            const cpm = Math.floor(currentVal.length / elapsed);
+            document.getElementById('cpm').innerText = isFinite(cpm) ? cpm : 0;
+        }
+
+        // 문장 완성 시
+        if(currentVal === targetText) {
+            const finalCpm = parseInt(document.getElementById('cpm').innerText);
+            finishLap(finalCpm);
+        }
+    }
+
+    function finishLap(speed) {
+        // 첫 시도에서 타수별 반복 횟수 설정
+        if(currentRepeat === 0) {
+            if(speed < 300) repeatGoal = 10;
+            else if(speed < 700) repeatGoal = 5;
+            else repeatGoal = 3;
+        }
+
+        currentRepeat++;
+
+        if(currentRepeat >= repeatGoal) {
+            alert(`목표 달성! (${speed}타). 다음 문장으로 넘어갑니다.`);
+            nextSentence();
+        } else {
+            setupNextLap();
+        }
+    }
+
+    function stopPractice() {
+        document.getElementById('admin-view').style.display = 'block';
+        document.getElementById('practice-view').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
