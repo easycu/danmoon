@@ -35,14 +35,11 @@
 
         h1 { text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--primary); }
 
-        /* 문장 관리 섹션 */
         .admin-section { border-bottom: 2px solid #f0f0f0; padding-bottom: 30px; margin-bottom: 30px; }
         #sentence-input { 
             width: 100%; height: 100px; padding: 15px; border: 1.5px solid #ddd; 
             border-radius: 10px; font-size: 16px; resize: none; box-sizing: border-box;
-            transition: border-color 0.3s;
         }
-        #sentence-input:focus { outline: none; border-color: var(--primary); }
 
         .btn-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
         button { 
@@ -52,9 +49,7 @@
         .btn-add { background: var(--primary); color: white; }
         .btn-list { background: #6c757d; color: white; }
         .btn-start { background: var(--accent); color: white; flex-grow: 1; font-size: 16px; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        /* 문장 목록 */
         #sentence-list { 
             margin-top: 20px; max-height: 200px; overflow-y: auto; 
             background: var(--secondary); padding: 15px; border-radius: 10px;
@@ -63,32 +58,27 @@
             display: flex; justify-content: space-between; align-items: center; 
             padding: 8px 0; border-bottom: 1px solid #e0e0e0;
         }
-        .item:last-child { border-bottom: none; }
         .del-btn { background: #ff7675; color: white; padding: 5px 10px; font-size: 11px; }
 
-        /* 연습 모드 */
         .practice-section { display: none; text-align: center; }
         .display-sentence { 
             font-size: 26px; margin: 40px 0; line-height: 1.8; word-break: keep-all; 
             min-height: 80px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px;
         }
 
-        /* 개선된 약어 디자인 */
         .display-sentence b {
             color: #fff;
             background-color: var(--primary);
             padding: 2px 8px;
             border-radius: 6px;
             font-weight: 700;
-            text-decoration: none;
             display: inline-block;
-            box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
             margin: 0 1px;
         }
 
         #practice-input { 
             width: 100%; font-size: 22px; padding: 15px; border: 3px solid var(--primary); 
-            border-radius: 12px; box-sizing: border-box; text-align: center;
+            border-radius: 12px; box-sizing: border-box; text-align: center; outline: none;
         }
 
         .stats { 
@@ -97,6 +87,7 @@
         }
         .stat-val { font-weight: 800; color: var(--primary); }
         .badge { background: #ffeaa7; padding: 5px 15px; border-radius: 50px; font-weight: bold; font-size: 14px; }
+        .guide-text { color: #999; font-size: 14px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -117,12 +108,13 @@
     <div id="practice-view" class="practice-section">
         <span class="badge" id="repeat-info">준비 완료</span>
         <div id="target-sentence" class="display-sentence"></div>
-        <input type="text" id="practice-input" autocomplete="off" placeholder="여기에 타이핑하세요" oninput="checkInput()">
+        <input type="text" id="practice-input" autocomplete="off" placeholder="문장을 치고 Enter 또는 Space를 누르세요" onkeydown="handleKeyDown(event)" oninput="startTimer()">
+        <p class="guide-text">완료 후 [엔터] 또는 [스페이스바]를 누르면 다음으로 넘어갑니다.</p>
         <div class="stats">
             <div>속도: <span class="stat-val" id="cpm">0</span> CPM</div>
             <div>진행: <span class="stat-val" id="progress">0</span> / <span id="goal">0</span></div>
         </div>
-        <button class="btn-list" style="margin-top:30px" onclick="stopPractice()">연습 중단 및 목록으로</button>
+        <button class="btn-list" style="margin-top:30px" onclick="stopPractice()">연습 중단</button>
     </div>
 </div>
 
@@ -133,15 +125,11 @@
     let currentRepeat = 0;
     let startTime = null;
 
-    // 1. 문장 저장 및 약어 처리 로직
     function saveSentence() {
         const input = document.getElementById('sentence-input');
         let text = input.value.trim();
         if(!text) return;
-        
-        // **단어** 를 <b>단어</b>로 변경 (약어 강조)
         let formatted = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        
         sentences.push(formatted);
         localStorage.setItem('sh_data', JSON.stringify(sentences));
         input.value = '';
@@ -174,7 +162,6 @@
         renderList();
     }
 
-    // 2. 연습 로직
     function startPractice() {
         if(!sentences.length) return alert('먼저 문장을 추가해주세요!');
         document.getElementById('admin-view').style.display = 'none';
@@ -190,38 +177,43 @@
     }
 
     function initLap() {
-        const targetArea = document.getElementById('target-sentence');
-        targetArea.innerHTML = sentences[currentIdx];
-        
-        document.getElementById('practice-input').value = '';
-        document.getElementById('practice-input').focus();
+        document.getElementById('target-sentence').innerHTML = sentences[currentIdx];
+        const inputField = document.getElementById('practice-input');
+        inputField.value = '';
+        inputField.focus();
         document.getElementById('repeat-info').innerText = repeatGoal === 0 ? "기록 측정 시도" : `${repeatGoal - currentRepeat}번 더 반복`;
         document.getElementById('progress').innerText = currentRepeat;
         document.getElementById('goal').innerText = repeatGoal === 0 ? "?" : repeatGoal;
-        
         startTime = null;
     }
 
-    function checkInput() {
-        const inputField = document.getElementById('practice-input');
-        const targetText = document.getElementById('target-sentence').innerText;
-        const currentVal = inputField.value;
+    function startTimer() {
+        if(!startTime) startTime = new Date();
+        
+        // 실시간 타수 업데이트
+        const currentVal = document.getElementById('practice-input').value;
+        const elapsed = (new Date() - startTime) / 1000 / 60;
+        const cpm = Math.floor(currentVal.length / elapsed);
+        document.getElementById('cpm').innerText = isFinite(cpm) ? cpm : 0;
+    }
 
-        if(!startTime && currentVal.length > 0) startTime = new Date();
+    // 엔터 또는 스페이스바 감지
+    function handleKeyDown(event) {
+        if (event.key === 'Enter' || event.code === 'Space') {
+            const inputField = document.getElementById('practice-input');
+            const targetText = document.getElementById('target-sentence').innerText.trim();
+            const currentVal = inputField.value.trim();
 
-        if(startTime) {
-            const elapsed = (new Date() - startTime) / 1000 / 60;
-            const cpm = Math.floor(currentVal.length / elapsed);
-            document.getElementById('cpm').innerText = isFinite(cpm) ? cpm : 0;
-        }
-
-        if(currentVal === targetText) {
-            handleComplete(parseInt(document.getElementById('cpm').innerText));
+            // 내용이 일치하는지 확인
+            if (currentVal === targetText) {
+                event.preventDefault(); // 스페이스/엔터 입력 방지
+                const finalCpm = parseInt(document.getElementById('cpm').innerText);
+                handleComplete(finalCpm);
+            }
         }
     }
 
     function handleComplete(speed) {
-        // 첫 번째 성공 시 반복 횟수 결정 (요청하신 기준)
         if(currentRepeat === 0) {
             if(speed < 300) repeatGoal = 10;
             else if(speed < 700) repeatGoal = 5;
@@ -231,7 +223,7 @@
         currentRepeat++;
 
         if(currentRepeat >= repeatGoal) {
-            alert(`축하합니다! ${speed}타로 목표를 달성하여 다음 문장으로 이동합니다.`);
+            alert(`목표 달성! (${speed}타) 다음 문장으로 이동합니다.`);
             pickRandomSentence();
         } else {
             initLap();
@@ -239,10 +231,8 @@
     }
 
     function stopPractice() {
-        if(confirm('연습을 중단하고 관리 화면으로 돌아갈까요?')) {
-            document.getElementById('admin-view').style.display = 'block';
-            document.getElementById('practice-view').style.display = 'none';
-        }
+        document.getElementById('admin-view').style.display = 'block';
+        document.getElementById('practice-view').style.display = 'none';
     }
 </script>
 </body>
