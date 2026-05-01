@@ -1,170 +1,170 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shorthand Master Pro</title>
-    <style>
-        :root { --primary: #4a90e2; --accent: #2ecc71; --bg: #f5f7fa; }
-        body { font-family: 'Pretendard', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { width: 100%; max-width: 850px; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h1 { text-align: center; color: var(--primary); }
-        .admin-section { border-bottom: 2px solid #f0f0f0; padding-bottom: 30px; margin-bottom: 30px; }
-        #sentence-input { width: 100%; height: 100px; padding: 15px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; resize: none; }
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        button { cursor: pointer; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; }
-        .btn-add { background: var(--primary); color: white; }
-        .btn-start { background: var(--accent); color: white; flex-grow: 1; font-size: 16px; }
-        #sentence-list { margin-top: 20px; max-height: 200px; overflow-y: auto; background: #f0f4f8; padding: 10px; border-radius: 10px; }
-        .item { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #ddd; }
-        .practice-section { display: none; text-align: center; }
-        .display-sentence { font-size: 26px; margin: 40px 0; line-height: 1.8; word-break: keep-all; }
-        .display-sentence b { color: #fff; background-color: var(--primary); padding: 0 6px; border-radius: 4px; margin: 0 2px; display: inline-block; }
-        #practice-input { width: 100%; font-size: 22px; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; box-sizing: border-box; text-align: center; outline: none; }
-        .stats { margin-top: 30px; display: flex; justify-content: center; gap: 40px; font-size: 18px; }
-        .badge { background: #ffeaa7; padding: 5px 15px; border-radius: 50px; font-weight: bold; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shorthand Master Pro</title>
+<style>
+:root { --primary: #4a90e2; --accent: #2ecc71; --bg: #f5f7fa; }
+body { font-family: 'Pretendard', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+.container { width: 100%; max-width: 850px; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+h1 { text-align: center; color: var(--primary); }
+.admin-section { border-bottom: 2px solid #f0f0f0; padding-bottom: 30px; margin-bottom: 30px; }
+#sentence-input { width: 100%; height: 100px; padding: 15px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; resize: none; }
+.btn-group { display: flex; gap: 10px; margin-top: 15px; }
+button { cursor: pointer; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; }
+.btn-add { background: var(--primary); color: white; }
+.btn-start { background: var(--accent); color: white; flex-grow: 1; font-size: 16px; }
+#sentence-list { margin-top: 20px; max-height: 200px; overflow-y: auto; background: #f0f4f8; padding: 10px; border-radius: 10px; }
+.item { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #ddd; }
+.practice-section { display: none; text-align: center; }
+.display-sentence { font-size: 26px; margin: 40px 0; line-height: 1.8; word-break: keep-all; }
+.display-sentence b { color: #fff; background-color: var(--primary); padding: 0 6px; border-radius: 4px; margin: 0 2px; display: inline-block; }
+#practice-input { width: 100%; font-size: 22px; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; box-sizing: border-box; text-align: center; outline: none; }
+.stats { margin-top: 30px; display: flex; justify-content: center; gap: 40px; font-size: 18px; }
+.badge { background: #ffeaa7; padding: 5px 15px; border-radius: 50px; font-weight: bold; }
+</style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Shorthand Typing Master</h1>
+<h1>Shorthand Typing Master</h1>
 
-    <div id="admin-view" class="admin-section">
-        <textarea id="sentence-input" placeholder="연습 문장을 입력하세요. **약어**는 별표 두 개로 감싸주세요."></textarea>
-        <div class="btn-group">
-            <button class="btn-add" onclick="saveSentence()">문장 저장</button>
-            <button class="btn-start" onclick="startPractice()">연습 시작하기 ▶</button>
-        </div>
-        <div id="sentence-list"></div>
-    </div>
+<div id="admin-view" class="admin-section">
+<textarea id="sentence-input" placeholder="연습 문장을 입력하세요. ,,약어,, 형식으로 입력"></textarea>
+<div class="btn-group">
+<button class="btn-add" onclick="saveSentence()">문장 저장</button>
+<button class="btn-start" onclick="startPractice()">연습 시작하기 ▶</button>
+</div>
+<div id="sentence-list"></div>
+</div>
 
-    <div id="practice-view" class="practice-section">
-        <span class="badge" id="repeat-info">기록 측정</span>
-        <div id="target-sentence" class="display-sentence"></div>
-        <input type="text"
-               id="practice-input"
-               autocomplete="off"
-               placeholder="문장을 따라 치세요"
-               oninput="handleInput()"
-               oncompositionstart="isComposing = true"
-               oncompositionend="isComposing = false; handleInput();">
-        <div class="stats">
-            <div>속도: <span id="cpm" style="font-weight:800; color:var(--primary);">0</span> CPM</div>
-            <div>진행: <span id="progress">0</span> / <span id="goal">?</span></div>
-        </div>
-        <button onclick="stopPractice()" style="margin-top:20px; background:#6c757d; color:white;">중단</button>
-    </div>
+<div id="practice-view" class="practice-section">
+<span class="badge" id="repeat-info">기록 측정</span>
+<div id="target-sentence" class="display-sentence"></div>
+<input type="text"
+id="practice-input"
+autocomplete="off"
+placeholder="문장을 따라 치세요"
+oninput="handleInput()"
+oncompositionstart="isComposing = true"
+oncompositionend="isComposing = false; handleInput();">
+
+<div class="stats">
+<div>속도: <span id="cpm" style="font-weight:800; color:var(--primary);">0</span> CPM</div>
+<div>진행: <span id="progress">0</span> / <span id="goal">?</span></div>
+</div>
+
+<button onclick="stopPractice()" style="margin-top:20px; background:#6c757d; color:white;">중단</button>
+</div>
 </div>
 
 <script>
-    let sentences = JSON.parse(localStorage.getItem('sh_data')) || [];
-    let currentIdx = -1;
-    let repeatGoal = 0;
-    let currentRepeat = 0;
-    let startTime = null;
-    let pureTargetText = "";
-    let isComposing = false; // ✅ 한글 조합 상태
+let sentences = JSON.parse(localStorage.getItem('sh_data')) || [];
+let currentIdx = -1;
+let repeatGoal = 0;
+let currentRepeat = 0;
+let startTime = null;
+let pureTargetText = "";
+let isComposing = false;
 
-    function saveSentence() {
-        const input = document.getElementById('sentence-input');
-        if(!input.value.trim()) return;
-        sentences.push(input.value.trim());
-        localStorage.setItem('sh_data', JSON.stringify(sentences));
-        input.value = '';
-        renderList();
-    }
+function saveSentence() {
+const input = document.getElementById('sentence-input');
+if(!input.value.trim()) return;
+sentences.push(input.value.trim());
+localStorage.setItem('sh_data', JSON.stringify(sentences));
+input.value = '';
+renderList();
+}
 
-    function renderList() {
-        const listDiv = document.getElementById('sentence-list');
-        listDiv.innerHTML = sentences.map((s, i) => `
-            <div class="item"><span>${i+1}. ${s.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</span>
-            <button onclick="deleteSentence(${i})" style="background:#ff7675; color:white; border-radius:4px;">삭제</button></div>
-        `).join('');
-    }
+function renderList() {
+const listDiv = document.getElementById('sentence-list');
+listDiv.innerHTML = sentences.map((s, i) => `
+<div class="item"><span>${i+1}. ${s.replace(/,,(.*?),,/g, '<b>$1</b>')}</span>
+<button onclick="deleteSentence(${i})" style="background:#ff7675; color:white;">삭제</button></div>
+`).join('');
+}
 
-    function deleteSentence(i) {
-        sentences.splice(i, 1);
-        localStorage.setItem('sh_data', JSON.stringify(sentences));
-        renderList();
-    }
+function deleteSentence(i) {
+sentences.splice(i, 1);
+localStorage.setItem('sh_data', JSON.stringify(sentences));
+renderList();
+}
 
-    function startPractice() {
-        if(!sentences.length) return alert('문장을 추가해주세요.');
-        document.getElementById('admin-view').style.display = 'none';
-        document.getElementById('practice-view').style.display = 'block';
-        pickRandomSentence();
-    }
+function startPractice() {
+if(!sentences.length) return alert('문장을 추가해주세요.');
+document.getElementById('admin-view').style.display = 'none';
+document.getElementById('practice-view').style.display = 'block';
+pickRandomSentence();
+}
 
-    function pickRandomSentence() {
-        currentIdx = Math.floor(Math.random() * sentences.length);
-        currentRepeat = 0;
-        repeatGoal = 0; 
-        initLap();
-    }
+function pickRandomSentence() {
+currentIdx = Math.floor(Math.random() * sentences.length);
+currentRepeat = 0;
+repeatGoal = 0;
+initLap();
+}
 
-    function initLap() {
-        const rawText = sentences[currentIdx];
-        document.getElementById('target-sentence').innerHTML = rawText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        pureTargetText = rawText.replace(/\*\*/g, '').replace(/\s/g, '');
-        
-        const inputField = document.getElementById('practice-input');
-        inputField.value = '';
-        inputField.focus();
-        updateUI();
-        startTime = null;
-    }
+function initLap() {
+const rawText = sentences[currentIdx];
+document.getElementById('target-sentence').innerHTML = rawText.replace(/,,(.*?),,/g, '<b>$1</b>');
+pureTargetText = rawText.replace(/,,/g, '').replace(/\s/g, '');
 
-    function updateUI() {
-        document.getElementById('repeat-info').innerText = repeatGoal === 0 ? "속도 측정 중..." : `반복 중 (${currentRepeat}/${repeatGoal})`;
-        document.getElementById('progress').innerText = currentRepeat;
-        document.getElementById('goal').innerText = repeatGoal === 0 ? "?" : repeatGoal;
-    }
+const inputField = document.getElementById('practice-input');
+inputField.value = '';
+inputField.focus();
+updateUI();
+startTime = null;
+}
 
-    function handleInput() {
-        if (isComposing) return; // ✅ 조합 중이면 무시
+function updateUI() {
+document.getElementById('repeat-info').innerText = repeatGoal === 0 ? "속도 측정 중..." : `반복 중 (${currentRepeat}/${repeatGoal})`;
+document.getElementById('progress').innerText = currentRepeat;
+document.getElementById('goal').innerText = repeatGoal === 0 ? "?" : repeatGoal;
+}
 
-        const inputField = document.getElementById('practice-input');
-        if(!startTime && inputField.value.length > 0) startTime = new Date();
+function handleInput() {
+if (isComposing) return;
 
-        if(startTime) {
-            const elapsed = (new Date() - startTime) / 1000 / 60;
-            const baseLength = pureTargetText.length;
-            document.getElementById('cpm').innerText = Math.floor(baseLength / elapsed) || 0;
-        }
+const inputField = document.getElementById('practice-input');
+if(!startTime && inputField.value.length > 0) startTime = new Date();
 
-        const currentValPure = inputField.value.replace(/\s/g, '');
+if(startTime) {
+const elapsed = (new Date() - startTime) / 1000 / 60;
+const baseLength = pureTargetText.length;
+document.getElementById('cpm').innerText = Math.floor(baseLength / elapsed) || 0;
+}
 
-        // ✅ 완전 일치 판정 (가장 안정적인 방식)
-        if (currentValPure === pureTargetText) {
-            const finalCpm = parseInt(document.getElementById('cpm').innerText) || 0;
+const currentValPure = inputField.value.replace(/\s/g, '');
 
-            requestAnimationFrame(() => {
-                handleComplete(finalCpm);
-            });
-        }
-    }
+if (currentValPure === pureTargetText) {
+const finalCpm = parseInt(document.getElementById('cpm').innerText) || 0;
+requestAnimationFrame(() => {
+handleComplete(finalCpm);
+});
+}
+}
 
-    function handleComplete(speed) {
-        if(currentRepeat === 0) {
-            if(speed < 300) repeatGoal = 10;
-            else if(speed < 700) repeatGoal = 5;
-            else repeatGoal = 3;
-        }
-        currentRepeat++;
-        if(currentRepeat >= repeatGoal) {
-            pickRandomSentence();
-        } else {
-            initLap();
-        }
-    }
+function handleComplete(speed) {
+if(currentRepeat === 0) {
+if(speed < 300) repeatGoal = 10;
+else if(speed < 700) repeatGoal = 5;
+else repeatGoal = 3;
+}
+currentRepeat++;
+if(currentRepeat >= repeatGoal) {
+pickRandomSentence();
+} else {
+initLap();
+}
+}
 
-    function stopPractice() {
-        document.getElementById('admin-view').style.display = 'block';
-        document.getElementById('practice-view').style.display = 'none';
-    }
+function stopPractice() {
+document.getElementById('admin-view').style.display = 'block';
+document.getElementById('practice-view').style.display = 'none';
+}
 
-    renderList();
+renderList();
 </script>
 </body>
 </html>
