@@ -41,7 +41,9 @@ button { cursor: pointer; padding: 10px 20px; border: none; border-radius: 8px; 
 
 <div id="practice-view" class="practice-section">
 <span class="badge" id="repeat-info">반복 중 (0/7)</span>
+
 <div id="target-sentence" class="display-sentence"></div>
+
 <input type="text"
 id="practice-input"
 autocomplete="off"
@@ -49,6 +51,11 @@ placeholder="문장을 따라 치세요"
 oninput="handleInput()"
 oncompositionstart="isComposing = true"
 oncompositionend="isComposing = false; handleInput();">
+
+<!-- ✅ 약어 표시 버튼 추가 -->
+<button onclick="markAbbreviation()" style="margin-top:10px; background:#4a90e2; color:white;">
+약어 표시
+</button>
 
 <div class="stats">
 <div>진행: <span id="progress">0</span> / <span id="goal">7</span></div>
@@ -153,6 +160,35 @@ pickWeightedSentence();
 } else {
 initLap();
 }
+}
+
+// ✅ 약어 표시 기능
+function markAbbreviation() {
+const input = document.getElementById('practice-input');
+const start = input.selectionStart;
+const end = input.selectionEnd;
+
+if (start === end) return;
+
+let current = input.value;
+const selected = current.slice(start, end);
+
+// 중복 방지
+if (selected.startsWith(',,') && selected.endsWith(',,')) return;
+
+const newText =
+current.slice(0, start) +
+',,' + selected + ',,' +
+current.slice(end);
+
+// 반영
+input.value = newText;
+sentences[currentIdx] = newText;
+
+localStorage.setItem('sh_data', JSON.stringify(sentences));
+
+// 재렌더
+initLap();
 }
 
 function stopPractice() {
