@@ -4,59 +4,88 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shorthand Master Pro</title>
+
 <style>
-:root { --primary: #4a90e2; --accent: #2ecc71; --bg: #f5f7fa; }
+:root { --primary:#4a90e2; --accent:#2ecc71; --bg:#f5f7fa; }
 
 body {
     font-family: 'Pretendard', sans-serif;
     background: var(--bg);
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
+    justify-content: center;
+    padding:20px;
 }
 
 .container {
-    width: 100%;
-    max-width: 850px;
-    background: white;
-    padding: 40px;
-    border-radius: 20px;
+    width:100%;
+    max-width:850px;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+}
+
+h1 { text-align:center; color:var(--primary); }
+
+#sentence-list {
+    margin-top:15px;
+    max-height:150px;
+    overflow-y:auto;
+    background:#f0f4f8;
+    padding:10px;
+    border-radius:10px;
+}
+
+.item {
+    display:flex;
+    justify-content:space-between;
+    padding:5px;
 }
 
 .display-sentence {
-    font-size: 26px;
-    margin: 40px 0;
-    line-height: 1.8;
-    border: 2px dashed #ddd;
-    padding: 10px;
+    font-size:26px;
+    margin:30px 0;
+    line-height:1.8;
+    border:2px dashed #ddd;
+    padding:10px;
 }
 
 .display-sentence b {
-    background: var(--primary);
-    color: white;
-    padding: 0 5px;
-    border-radius: 4px;
+    background:var(--primary);
+    color:white;
+    padding:0 5px;
+    border-radius:4px;
 }
 
 #practice-input {
-    width: 100%;
-    font-size: 22px;
-    padding: 15px;
-    border: 2px solid var(--primary);
-    border-radius: 10px;
+    width:100%;
+    font-size:22px;
+    padding:10px;
+    border:2px solid var(--primary);
+    border-radius:10px;
 }
 </style>
 </head>
+
 <body>
 
 <div class="container">
 
-<textarea id="sentence-input" placeholder="문장 입력"></textarea>
-<button onclick="saveSentence()">저장</button>
-<button onclick="startPractice()">연습 시작</button>
+<h1>Shorthand Typing Master</h1>
 
-<hr>
+<!-- 관리자 화면 -->
+<div id="admin-view">
+<textarea id="sentence-input" placeholder="문장 입력"></textarea>
+<br>
+<button onclick="saveSentence()">저장</button>
+<button onclick="startPractice()">연습 시작 ▶</button>
+
+<div id="sentence-list"></div>
+</div>
+
+<!-- 연습 화면 -->
+<div id="practice-view" style="display:none">
+
+<p id="progress">0 / 7</p>
 
 <div id="target-sentence" class="display-sentence" contenteditable="true"></div>
 
@@ -65,8 +94,9 @@ body {
 <br><br>
 
 <button onclick="markAbbreviation()">약어 표시</button>
+<button onclick="stopPractice()">중단</button>
 
-<p id="progress">0 / 7</p>
+</div>
 
 </div>
 
@@ -78,56 +108,93 @@ let currentIdx = 0;
 let repeat = 0;
 let pureTarget = "";
 
+// 목록 렌더
+function renderList() {
+    const list = document.getElementById('sentence-list');
+
+    list.innerHTML = sentences.map((s,i)=>`
+        <div class="item">
+        <span>${i+1}. ${s.replace(/,,(.*?),,/g,'<b>$1</b>')}</span>
+        <button onclick="deleteSentence(${i})">삭제</button>
+        </div>
+    `).join('');
+}
+
 // 저장
 function saveSentence() {
     const val = document.getElementById('sentence-input').value.trim();
-    if (!val) return;
+    if(!val) return;
 
     sentences.push(val);
     counts.push(0);
 
-    localStorage.setItem('sh_data', JSON.stringify(sentences));
-    localStorage.setItem('sh_counts', JSON.stringify(counts));
+    localStorage.setItem('sh_data',JSON.stringify(sentences));
+    localStorage.setItem('sh_counts',JSON.stringify(counts));
+
+    document.getElementById('sentence-input').value='';
+    renderList();
 }
 
-// 연습 시작
-function startPractice() {
+// 삭제
+function deleteSentence(i){
+    sentences.splice(i,1);
+    counts.splice(i,1);
+
+    localStorage.setItem('sh_data',JSON.stringify(sentences));
+    localStorage.setItem('sh_counts',JSON.stringify(counts));
+
+    renderList();
+}
+
+// 시작
+function startPractice(){
+    if(!sentences.length) return alert('문장 없음');
+
+    document.getElementById('admin-view').style.display='none';
+    document.getElementById('practice-view').style.display='block';
+
     pickSentence();
 }
 
-// 가중치 선택
-function pickSentence() {
-    let min = Math.min(...counts);
-    let candidates = counts.map((c,i)=> c===min ? i : -1).filter(i=>i!==-1);
+// 중단
+function stopPractice(){
+    document.getElementById('admin-view').style.display='block';
+    document.getElementById('practice-view').style.display='none';
+}
 
-    currentIdx = candidates[Math.floor(Math.random()*candidates.length)];
-    repeat = 0;
+// 가중치 선택
+function pickSentence(){
+    let min = Math.min(...counts);
+    let cands = counts.map((c,i)=>c===min?i:-1).filter(i=>i!==-1);
+
+    currentIdx = cands[Math.floor(Math.random()*cands.length)];
+    repeat=0;
     loadSentence();
 }
 
 // 로드
-function loadSentence() {
+function loadSentence(){
     let raw = sentences[currentIdx];
 
     document.getElementById('target-sentence').innerHTML =
-        raw.replace(/,,(.*?),,/g, '<b>$1</b>');
+        raw.replace(/,,(.*?),,/g,'<b>$1</b>');
 
     pureTarget = raw.replace(/,,/g,'').replace(/\s/g,'');
 
-    document.getElementById('practice-input').value = '';
+    document.getElementById('practice-input').value='';
     updateProgress();
 }
 
 // 입력 체크
-document.getElementById('practice-input').addEventListener('input', ()=>{
+document.getElementById('practice-input').addEventListener('input',()=>{
     let val = document.getElementById('practice-input').value.replace(/\s/g,'');
 
-    if (val === pureTarget) {
+    if(val === pureTarget){
         repeat++;
 
-        if (repeat >= 7) {
+        if(repeat>=7){
             counts[currentIdx]++;
-            localStorage.setItem('sh_counts', JSON.stringify(counts));
+            localStorage.setItem('sh_counts',JSON.stringify(counts));
             pickSentence();
         } else {
             loadSentence();
@@ -135,39 +202,37 @@ document.getElementById('practice-input').addEventListener('input', ()=>{
     }
 });
 
-// 진행 표시
-function updateProgress() {
+// 진행
+function updateProgress(){
     document.getElementById('progress').innerText = `${repeat} / 7`;
 }
 
-// 🔥 핵심 기능
-function markAbbreviation() {
+// 🔥 약어 표시 (문장 직접 선택)
+function markAbbreviation(){
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if(!sel.rangeCount) return;
 
     const selected = sel.toString().trim();
-    if (!selected) return;
+    if(!selected) return;
 
     let raw = sentences[currentIdx];
 
-    // 이미 포함된 경우 방지
-    if (raw.includes(`,,${selected},,`)) return;
-
-    // 해당 위치만 정확히 치환
     let index = raw.indexOf(selected);
-    if (index === -1) return;
+    if(index === -1) return;
 
     let newText =
-        raw.slice(0, index) +
-        ',,' + selected + ',,' +
-        raw.slice(index + selected.length);
+        raw.slice(0,index) +
+        ',,'+selected+',,' +
+        raw.slice(index+selected.length);
 
     sentences[currentIdx] = newText;
 
-    localStorage.setItem('sh_data', JSON.stringify(sentences));
+    localStorage.setItem('sh_data',JSON.stringify(sentences));
 
     loadSentence();
 }
+
+renderList();
 </script>
 
 </body>
